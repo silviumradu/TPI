@@ -16,7 +16,7 @@
         :name="message.from == 'me' ? userDetails.name : otherUserDetails.name"
         :text="[message.text]"
         :sent="message.from == 'me' ? true : false"
-        :bg-color="message.from == 'me' ? 'white': 'light-green-2'"
+        :bg-color="message.from == 'me' ? 'light-blue-2': 'light-green-2'"
       />
     </div>
     <q-footer elevated>
@@ -34,9 +34,15 @@
             label="Message"
             dense
           >
+            <template v-slot:append>
+              <q-btn @click="sendAudio" round dense flat icon="mic" />
+              <q-btn @click="sendImage" round dense flat icon="image" />
+             </template>
+
             <template v-slot:after>
               <q-btn @click="sendMessage" round dense flat color="white" icon="send" />
             </template>
+
           </q-input>
 
         </q-form>
