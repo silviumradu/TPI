@@ -32,7 +32,7 @@
 <script>
 export default {
   data() {
-    return { tab: "login" };
+    return { tab: "register" };
   },
   components: {
     "login-register": require("components/LoginRegister.vue").default,

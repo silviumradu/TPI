@@ -1,7 +1,7 @@
 <template>
   <q-page
   ref="pageChat"
-  class="page-chat flex column">
+  class="page-chat flex column q-pa-md">
     <q-banner
     v-if="!otherUserDetails.online"
     class="bg-grey-4 text-center fixed-top">
@@ -17,8 +17,21 @@
         :text="[message.text]"
         :sent="message.from == 'me' ? true : false"
         :bg-color="message.from == 'me' ? 'light-blue-2': 'light-green-2'"
-      />
+      >
+      <div
+      v-for="(audio, key) in audios"
+      :key="key">
+          <audio controls
+           :src="audio">
+          </audio>
+        </div>
+      </q-chat-message>
     </div>
+
+
+
+
+
     <q-footer elevated>
       <q-toolbar>
         <q-form
@@ -35,8 +48,9 @@
             dense
           >
             <template v-slot:append>
-              <q-btn @click="sendAudio" round dense flat icon="mic" />
-              <q-btn @click="sendImage" round dense flat icon="image" />
+              <q-btn @click="stop()" color="negative" round dense flat icon="stop" />
+              <q-btn @click="record()" round dense flat icon="mic" />
+              <q-btn round dense flat icon="image" />
              </template>
 
             <template v-slot:after>
@@ -52,6 +66,7 @@
 </template>
 
 <script>
+import { QSpinnerBars } from 'quasar'
 import { mapState, mapActions } from 'vuex'
 import mixinOtherUserDetails from 'src/mixins/mixin-other-user-details.js'
 
@@ -60,7 +75,11 @@ export default {
   data () {
     return {
       newMessage: '',
-      showMessages: false
+      showMessages: false,
+      mediaRecorder: null,
+      chunks: [],
+      audios: [],
+      btnStop: false
     }
   },
   computed: {
@@ -74,6 +93,10 @@ export default {
         text: this.newMessage,
         from: 'me'
         },
+        audio: {
+          audio: this.newMessage,
+          from: 'me'
+        },
         otherUserId: this.$route.params.otherUserId
       })
       this.clearMessage()
@@ -86,6 +109,44 @@ export default {
       let pageChat =  this.$refs.pageChat.$el
       setTimeout(() => {
       window.scrollTo(0, pageChat.scrollHeight)}, 20);
+    },
+    init () {
+      if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then((stream) => {
+            this.mediaRecorder = new MediaRecorder(stream)
+
+            this.mediaRecorder.ondataavailable = (e) => {
+              this.chunks.push(e.data)
+            }
+
+            this.mediaRecorder.onstop = (e) => {
+              const blob = new Blob(this.chunks, { type: 'audio/ogg; codecs=opus' })
+              const audioURL = window.URL.createObjectURL(blob)
+              this.chunks = []
+              this.audios.push(audioURL)
+            }
+          })
+          .catch(function (err) {
+            console.log('The following getUserMedia error occured: ' + err)
+          })
+      } else {
+        alert('getUserMedia not supported on your browser!')
+      }
+    },
+    record () {
+      this.mediaRecorder.start()
+      this.$q.loading.show({
+        spinner: QSpinnerBars,
+        spinnerColor: 'white',
+        backgroundColor: 'primary'
+      })
+      this.btnStop = true
+    },
+    stop () {
+      this.mediaRecorder.stop()
+      this.$q.loading.hide()
+      this.btnStop = false
     }
   },
   watch: {
@@ -100,6 +161,7 @@ export default {
   },
   mounted() {
     this.firebaseGetMessages(this.$route.params.otherUserId)
+    this.init()
   },
   destroyed() {
     this.firebaseStopGettingMessages()
