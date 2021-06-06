@@ -19,24 +19,33 @@
         :bg-color="message.from == 'me' ? 'light-blue-2': 'light-green-2'"
       >
       <div
-      v-for="(audio, key) in audios"
-      :key="key">
+        v-for="(audio, index) in audios"
+        :key="index"
+        :name="audio.from == 'me' ? userDetails.name : otherUserDetails.name"
+        :text="[message.text]"
+        :sent="audio.from == 'me' ? true : false"
+        :bg-color="audio.from == 'me' ? 'light-blue-2': 'light-green-2'"
+      >
           <audio controls
            :src="audio">
           </audio>
-        </div>
+      </div>
       </q-chat-message>
     </div>
-
-
-
-
 
     <q-footer elevated>
       <q-toolbar>
         <q-form
-        class="full-width"
+        class="full-width items-start"
         @submit="sendMessage" >
+
+          <input
+                url="http://localhost:4444/upload"
+                type="file"
+                style="display: none"
+                ref="fileInput"
+                accept="image/*"
+                @change="onFilePicked"/>
 
           <q-input
             v-model="newMessage"
@@ -47,10 +56,11 @@
             label="Message"
             dense
           >
+
             <template v-slot:append>
               <q-btn @click="stop()" color="negative" round dense flat icon="stop" />
               <q-btn @click="record()" round dense flat icon="mic" />
-              <q-btn round dense flat icon="image" />
+              <q-btn @click="onPickFile" round dense flat icon="folder"/>
              </template>
 
             <template v-slot:after>
@@ -58,7 +68,6 @@
             </template>
 
           </q-input>
-
         </q-form>
       </q-toolbar>
     </q-footer>
@@ -79,7 +88,8 @@ export default {
       mediaRecorder: null,
       chunks: [],
       audios: [],
-      btnStop: false
+      btnStop: false,
+      image: null
     }
   },
   computed: {
@@ -147,6 +157,19 @@ export default {
       this.mediaRecorder.stop()
       this.$q.loading.hide()
       this.btnStop = false
+    },
+    onPickFile () {
+      this.$refs.fileInput.click()
+    },
+    onFilePicked (event) {
+      const files = event.target.files
+      let filename = files[0].name
+      const fileReader = new FileReader()
+      fileReader.addEventListener('load', () => {
+      this.imageUrl = fileReader.result
+  })
+  fileReader.readAsDataURL(files[0])
+  this.image = files[0]
     }
   },
   watch: {

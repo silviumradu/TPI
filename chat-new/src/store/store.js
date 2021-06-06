@@ -6,7 +6,8 @@ let messagesRef
 const state = {
   userDetails: {},
   users: {},
-  messages: {}
+  messages: {},
+  audios: {}
 }
 const mutations = {
   setUserDetails (state, payload) {
@@ -20,9 +21,11 @@ const mutations = {
   },
   addMessage (state, payload) {
     Vue.set(state.messages, payload.messageId, payload.messageDetails)
+    Vue.set(state.audios, payload.audioId, payload.audioDetails)
   },
   clearMessages (state) {
     state.messages = {}
+    state.audios = {}
   }
 }
 const actions = {
@@ -39,6 +42,7 @@ const actions = {
       })
       .catch(error => {
         console.log(error.message)
+        console.log(error.audio)
       })
   },
   loginUser ({ }, payload) {
@@ -48,6 +52,7 @@ const actions = {
       })
       .catch(error => {
         console.log(error.message)
+        console.log(error.audio)
       })
   },
   logoutUser () {
@@ -117,10 +122,14 @@ const actions = {
     messagesRef = firebaseDb.ref('chats/' + userId + '/' + otherUserId)
     messagesRef.on('child_added', snapshot => {
       let messageDetails = snapshot.val()
+      let audioDetails = snapshot.val()
       let messageId = snapshot.key
+      let audioId = snapshot.index
       commit('addMessage', {
         messageId,
-        messageDetails
+        audioId,
+        messageDetails,
+        audioDetails
       })
     })
   },
@@ -132,9 +141,11 @@ const actions = {
   },
   firebaseSendMessage ({ }, payload) {
     firebaseDb.ref('chats/' + state.userDetails.userId + '/' + payload.otherUserId).push(payload.message)
+    firebaseDb.ref('chats/' + state.userDetails.userId + '/' + payload.otherUserId).push(payload.audio)
 
     payload.message.from = 'them'
     firebaseDb.ref('chats/' + payload.otherUserId + '/' + state.userDetails.userId).push(payload.message)
+    firebaseDb.ref('chats/' + payload.otherUserId + '/' + state.userDetails.userId).push(payload.audio)
 
   }
 }
